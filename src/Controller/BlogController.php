@@ -34,10 +34,15 @@ class BlogController extends AbstractController {
 	];
 
 	/**
-	 * @Route("/", name="blog_list")
+	 * @Route("/{page}", name="blog_list")
 	 */
-	public function list() {
-		return new JsonResponse(self::POSTS);
+	public function list($page = 1) {
+		return $this->json([
+			'page' => $page,
+			'data' => array_map(function($item) {
+				return $this->generateUrl('blog_by_id', ['id' => $item['id']]);
+			}, self::POSTS)
+		]);
 	}
 
 	/**
@@ -45,7 +50,7 @@ class BlogController extends AbstractController {
 	 * @Route("/{id}", name="blog_by_id", requirements={"id"="\d+"})
 	 */
 	public function post($id) {
-		return new JsonResponse(
+		return $this->json(
 			self::POSTS[array_search($id, array_column(self::POSTS, 'id'))]
 		);
 	}
@@ -55,7 +60,7 @@ class BlogController extends AbstractController {
 	 * @Route("/{slug}", name="blog_by_slug")
 	 */
 	public function postBySlug($slug) {
-		return new JsonResponse(
+		return $this->json(
 			self::POSTS[array_search($slug, array_column(self::POSTS, 'slug'))]
 		);
 	}
