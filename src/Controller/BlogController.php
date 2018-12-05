@@ -13,6 +13,7 @@ use App\Entity\BlogPost;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Serializer\Serializer;
 
@@ -24,48 +25,36 @@ use Symfony\Component\Serializer\Serializer;
  */
 class BlogController extends AbstractController {
 
-	private const POSTS = [
-		[
-			'id' => 1,
-			'slug' => 'hello-world',
-			'title' => 'Hello world'
-		], [
-			'id' => 2,
-			'slug' => 'another-post',
-			'title' => 'Another post'
-		]
-	];
-
 	/**
 	 * @Route("/{page}", name="blog_list", requirements={"page"="\d+"})
 	 */
 	public function list($page = 1) {
+		//$repo = $this->getDoctrine()->getRepository(BlogPost::class);
+		$items = $this->getDoctrine()->getRepository(BlogPost::class)->findAll();
+		
 		return $this->json([
 			'page' => $page,
 			'data' => array_map(function($item) {
-				return $this->generateUrl('blog_by_id', ['id' => $item['id']]);
-			}, self::POSTS)
+				return $this->generateUrl('blog_by_slug', ['slug' => $item->getSlug()]);
+			}, $items)
 		]);
 	}
 
 	/**
-	 * @param $id
-	 * @Route("/post/{id}", name="blog_by_id", requirements={"id"="\d+"})
+	 * @param BlogPost $post
+	 * @Route("/post/{id}", name="blog_by_id", requirements={"id"="\d+"}, methods={"GET"})
 	 */
-	public function post($id) {
-		return $this->json(
-			self::POSTS[array_search($id, array_column(self::POSTS, 'id'))]
-		);
+	public function post(BlogPost $post) {
+		return $this->json($post);//same as find($id) on repo
 	}
 
 	/**
-	 * @param $slug
-	 * @Route("/post/{slug}", name="blog_by_slug")
+	 * @param BlogPost $post
+	 * @Route("/post/{slug}", name="blog_by_slug", methods={"GET"})
 	 */
-	public function postBySlug($slug) {
-		return $this->json(
-			self::POSTS[array_search($slug, array_column(self::POSTS, 'slug'))]
-		);
+	public function postBySlug(BlogPost $post) {
+		//Note: the parameter slug should exist in db table too, if not then we need to use ParamConverter annotation to map
+		return $this->json($post);//same as of findBy(['slug' => 'slug value'])
 	}
 
 	/**
@@ -84,5 +73,17 @@ class BlogController extends AbstractController {
 		$em->flush();
 
 		return $this->json($blogPost);
+	}
+
+	/**
+	 * @param BlogPost $post
+	 * @Route("/post/{id}", name="blog_delete", methods={"DELETE"})
+	 */
+	public function delete(BlogPost $post) {
+		$em = $this->getDoctrine()->getManager();
+		$em->remove($post);
+		$em->flush();
+
+		return new JsonResponse(null, Response::HTTP_NO_CONTENT);
 	}
 }
