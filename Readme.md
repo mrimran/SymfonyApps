@@ -40,3 +40,8 @@ php bin/console doctrine:migrations:migrate
     "author": "Imran"
 }
 ```
+
+## Seeder
+```
+php bin/console doctrine:fixtures:load
+```
