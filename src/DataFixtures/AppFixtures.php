@@ -16,7 +16,13 @@ class AppFixtures extends Fixture
 	 */
 	private $passEncoder;
 
+	/**
+	 * @var \Faker\Factory
+	 */
+	private $faker;
+
 	public function __construct(UserPasswordEncoderInterface $passEncoder) {
+		$this->faker = \Faker\Factory::create();
 		$this->passEncoder = $passEncoder;
 	}
 
@@ -24,40 +30,44 @@ class AppFixtures extends Fixture
     {
     	$this->loadUsers($manager);
 		$this->loadBlogPosts($manager);
+	    $this->loadComments($manager);
     }
 
     public function loadBlogPosts(ObjectManager $manager) {
     	$user = $this->getReference('user_post');
 
-	    $post = new BlogPost();
-	    $post->setTitle('Testing seed title 1');
-	    $post->setPublished(new \DateTime('2018-12-05 12:00:00'));
-	    $post->setContent('Testing seed content 1...');
-	    $post->setAuthor($user);
-	    $post->setSlug('testing-seed-title-1');
-	    $manager->persist($post);
+	    for($i = 0; $i < 100; $i++) {
+		    $post = new BlogPost();
+		    $title = $this->faker->realText(30);
+		    //$slug = str_replace(' ', '-', $title);
+		    $post->setTitle($title);
+		    $post->setPublished($this->faker->dateTimeThisYear);
+		    $post->setContent($this->faker->realText());
+		    $post->setAuthor($user);
+		    $post->setSlug($this->faker->slug);
 
-	    $post = new BlogPost();
-	    $post->setTitle('Testing seed title 2');
-	    $post->setPublished(new \DateTime('2018-12-05 12:00:00'));
-	    $post->setContent('Testing seed content 2...');
-	    $post->setAuthor($user);
-	    $post->setSlug('testing-seed-title-2');
-	    $manager->persist($post);
+		    $this->setReference("blog_post_$i", $post);
 
-	    $post = new BlogPost();
-	    $post->setTitle('Testing seed title 3');
-	    $post->setPublished(new \DateTime('2018-12-05 12:00:00'));
-	    $post->setContent('Testing seed content 3...');
-	    $post->setAuthor($user);
-	    $post->setSlug('testing-seed-title-3');
-	    $manager->persist($post);
+		    $manager->persist($post);
+	    }
 
 	    $manager->flush();
     }
 
     public function loadComments(ObjectManager $manager) {
+	    for($i = 0; $i < 100; $i++) {
+	    	for($j = 0; $j < rand(1, 10); $j++) {
+	    		$comment = new Comment();
+	    		$comment->setContent($this->faker->realText());
+	    		$comment->setPublished($this->faker->dateTimeThisYear);
+	    		$comment->setPost($this->getReference("blog_post_$i"));
+	    		$comment->setAuthor($this->getReference('user_post'));
 
+	    		$manager->persist($comment);
+		    }
+	    }
+
+	    $manager->flush();
     }
 
     public function loadUsers(ObjectManager $manager) {
